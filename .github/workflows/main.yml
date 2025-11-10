@@ -42,7 +42,6 @@ jobs:
         DB_HOST: 127.0.0.1
         DB_PORT: 5433
       run: |
-        cd ..
         python -m flake8 backend/
 
   build_and_push_to_docker_hub:
@@ -79,7 +78,7 @@ jobs:
     - name: Install dependencies
       run: |
         cd frontend/
-        npm ci
+        npm install
 
     - name: Test frontend
       run: |
