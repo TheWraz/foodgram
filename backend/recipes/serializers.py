@@ -150,7 +150,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f'Ингредиент с id {item["id"]} не существует.'
                 )
-            if item.get('amount', 0) < 1:
+            if int(item.get('amount', 0)) < 1:
                 raise serializers.ValidationError(
                     'Количество ингредиента должно быть не менее 1.'
                 )
