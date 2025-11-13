@@ -16,6 +16,13 @@ class RecipeFilter(django_filters.FilterSet):
         model = Recipe
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
+    def filter_tags(self, queryset, name, value):
+        """Фильтр по тегам."""
+        if not value:
+            return queryset
+        tags_slugs = value
+        return queryset.filter(tags__slug__in=tags_slugs).distinct()
+
     def filter_is_favorited(self, queryset, name, value):
         """Фильтр по избранному."""
         if value and self.request.user.is_authenticated:
