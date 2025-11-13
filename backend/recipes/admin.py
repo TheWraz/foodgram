@@ -3,11 +3,15 @@ from django.contrib import admin
 from .models import (
     Tag, Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingCart
 )
+from foodgram.constants import (
+    RECIPE_INGREDIENT_EXTRA, RECIPE_INGREDIENT_MIN_NUM
+)
 
 
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
-    extra = 1
+    extra = RECIPE_INGREDIENT_EXTRA
+    min_num = RECIPE_INGREDIENT_MIN_NUM
 
 
 @admin.register(Tag)

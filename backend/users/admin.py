@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import CustomUser, Follow
+from .models import User, Follow
 
 
-@admin.register(CustomUser)
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
     list_display = (
         'id', 'email', 'username', 'first_name', 'last_name', 'is_staff'

@@ -2,35 +2,23 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.conf import settings
 
+from foodgram.constants import MAX_LENGTH_FIRSTNAME, MAX_LENGTH_LASTNAME
 
-class CustomUser(AbstractUser):
+
+class User(AbstractUser):
     """Кастомная модель пользователя."""
 
-    username = models.CharField(
-        'Имя пользователя',
-        max_length=150,
-        unique=True,
-        blank=False,
-        null=False
-    )
     email = models.EmailField(
         'Email',
-        max_length=254,
         unique=True,
-        blank=False,
-        null=False
     )
     first_name = models.CharField(
         'Имя',
-        max_length=150,
-        blank=False,
-        null=False
+        max_length=MAX_LENGTH_FIRSTNAME,
     )
     last_name = models.CharField(
         'Фамилия',
-        max_length=150,
-        blank=False,
-        null=False
+        max_length=MAX_LENGTH_LASTNAME,
     )
     avatar = models.ImageField(
         'Аватар',
@@ -43,9 +31,9 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
-        ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('email', 'username')
 
     def __str__(self):
         return self.email
@@ -70,16 +58,16 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'author'],
+                fields=('user', 'author'),
                 name='unique_follow'
             ),
             models.CheckConstraint(
                 check=~models.Q(user=models.F('author')),
                 name='prevent_self_follow'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'{self.user} подписан на {self.author}'
