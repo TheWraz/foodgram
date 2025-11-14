@@ -6,7 +6,7 @@ from recipes.models import Recipe, Ingredient, Favorite, ShoppingCart
 class RecipeFilter(django_filters.FilterSet):
     """Фильтры для рецептов по автору, тегам и избранному."""
 
-    tags = django_filters.MultipleChoiceFilter(method='filter_tags')
+    tags = django_filters.AllValuesMultipleFilter(field_name='tags__slug')
     is_favorited = django_filters.CharFilter(method='filter_is_favorited')
     is_in_shopping_cart = django_filters.CharFilter(
         method='filter_is_in_shopping_cart'
@@ -15,13 +15,6 @@ class RecipeFilter(django_filters.FilterSet):
     class Meta:
         model = Recipe
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
-
-    def filter_tags(self, queryset, name, value):
-        """Фильтр по тегам."""
-        if not value:
-            return queryset
-        tags_slugs = self.request.GET.getlist('tags')
-        return queryset.filter(tags__slug__in=tags_slugs).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
         """Фильтр по избранному."""
