@@ -20,7 +20,7 @@ class RecipeFilter(django_filters.FilterSet):
         """Фильтр по тегам."""
         if not value:
             return queryset
-        tags_slugs = value
+        tags_slugs = self.request.GET.getlist('tags')
         return queryset.filter(tags__slug__in=tags_slugs).distinct()
 
     def filter_is_favorited(self, queryset, name, value):
