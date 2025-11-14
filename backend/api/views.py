@@ -7,17 +7,17 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
+from djoser.views import UserViewSet as DjoserUserViewSet
 
 from .pagination import FoodgramPagination
 from .filters import IngredientFilter, RecipeFilter
-from .permissions import IsAuthorOrReadOnly
+from .permissions import RecipePermission, UserPermission
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow
 from .serializers import (
     IngredientSerializer, RecipeReadSerializer, ShoppingCartSerializer,
-    RecipeWriteSerializer, TagSerializer, FavoriteSerializer, UserSerializer,
-    AvatarSerializer, SubscriptionSerializer, FollowCreateSerializer,
-    UserCreateSerializer
+    RecipeWriteSerializer, TagSerializer, FavoriteSerializer,
+    SubscriptionSerializer, FollowCreateSerializer, AvatarSerializer
 )
 
 
@@ -51,15 +51,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = FoodgramPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
-
-    def get_permissions(self):
-        """Разные права для разных методов."""
-        if self.request.method in SAFE_METHODS:
-            return [permissions.AllowAny()]
-        elif self.request.method == 'POST':
-            return [permissions.IsAuthenticated()]
-        else:
-            return [IsAuthorOrReadOnly()]
+    permission_classes = [RecipePermission]
 
     def get_serializer_class(self):
         """Подбирает сериализатор для чтения или записи."""
@@ -111,18 +103,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def _delete_relation(self, model, request, pk):
         """Общий метод для удаления связей."""
-        if not request.user.is_authenticated:
-            return Response(
-                {'detail': 'Учетные данные не были предоставлены.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
         recipe = get_object_or_404(Recipe, id=pk)
         deleted_count, _ = model.objects.filter(
             user=request.user,
             recipe=recipe
         ).delete()
 
-        if deleted_count == 0:
+        if not deleted_count:
             return Response(
                 {'errors': 'Рецепт не был добавлен.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -132,7 +119,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['get'],
-        permission_classes=[IsAuthenticated],
+        permission_classes=[permissions.AllowAny],
         url_path='get-link'
     )
     def get_link(self, request, pk=None):
@@ -171,60 +158,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return response
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(DjoserUserViewSet):
     """Вьюсет для работы с пользователями."""
 
     queryset = User.objects.all()
     pagination_class = FoodgramPagination
-
-    def get_serializer_class(self):
-        """Выбор сериализатора в зависимости от действия."""
-        if self.action == 'create':
-            return UserCreateSerializer
-        return UserSerializer
-
-    def get_permissions(self):
-        """Настройка прав доступа для разных действий."""
-        if self.action in ['create', 'list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
-
-    @action(
-        detail=False,
-        methods=['get'],
-        permission_classes=[permissions.IsAuthenticated]
-    )
-    def me(self, request):
-        """Получить собственный профиль пользователя."""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
-
-    @action(
-        detail=False,
-        methods=['post'],
-        permission_classes=[permissions.IsAuthenticated],
-        url_path='set_password'
-    )
-    def set_password(self, request):
-        """Смена пароля текущего пользователя."""
-        user = request.user
-        current_password = request.data.get('current_password')
-        new_password = request.data.get('new_password')
-
-        if not current_password or not new_password:
-            return Response(
-                {'error': 'Требуются текущий и новый пароли'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not user.check_password(current_password):
-            return Response(
-                {'error': 'Неверный текущий пароль'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        user.set_password(new_password)
-        user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    permission_classes = [UserPermission]
 
     @action(
         detail=False,
@@ -247,9 +186,9 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
         url_path='subscribe'
     )
-    def subscribe(self, request, pk=None):
+    def subscribe(self, request, id=None):
         """Подписаться на автора."""
-        author = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=id)
         serializer = FollowCreateSerializer(
             data={'user': request.user.id, 'author': author.id},
             context={'request': request}
@@ -259,14 +198,14 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
-    def unsubscribe(self, request, pk=None):
+    def unsubscribe(self, request, id=None):
         """Отписаться от автора."""
-        author = get_object_or_404(User, id=pk)
+        author = get_object_or_404(User, id=id)
         deleted_count, _ = Follow.objects.filter(
             user=request.user, author=author
         ).delete()
 
-        if deleted_count == 0:
+        if not deleted_count:
             return Response(
                 {'error': 'Вы не подписаны на этого автора.'},
                 status=status.HTTP_400_BAD_REQUEST

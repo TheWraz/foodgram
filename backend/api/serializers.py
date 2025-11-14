@@ -48,23 +48,6 @@ class UserSerializer(serializers.ModelSerializer):
         )
 
 
-class UserCreateSerializer(UserSerializer):
-    """Сериализатор для регистрации пользователей."""
-
-    class Meta:
-        model = User
-        fields = (
-            'id', 'email', 'username', 'first_name', 'last_name', 'password'
-        )
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
-
-    def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
-
-
 class TagSerializer(serializers.ModelSerializer):
     """Сериализатор для тегов."""
 
@@ -85,7 +68,6 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов при записи рецепта."""
 
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = RecipeIngredient
@@ -149,13 +131,6 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             return self.context['request'].build_absolute_uri(obj.image.url)
         return ""
 
-    def get_short_link(self, obj):
-        """Получает короткую ссылку на рецепт."""
-        request = self.context.get('request')
-        if request and obj.short_code:
-            return request.build_absolute_uri(f'/r/{obj.short_code}/')
-        return None
-
 
 class RecipeWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и обновления рецептов."""
@@ -209,7 +184,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return data
 
-    def _create_recipe_ingredients(self, recipe, ingredients_data):
+    @staticmethod
+    def _create_recipe_ingredients(recipe, ingredients_data):
         """Создание ингредиентов рецепта через bulk_create."""
         recipe_ingredients = [
             RecipeIngredient(
@@ -237,13 +213,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop('ingredients', None)
         tags_data = validated_data.pop('tags', None)
         instance = super().update(instance, validated_data)
-
-        if tags_data is not None:
-            instance.tags.set(tags_data)
-
-        if ingredients_data is not None:
-            instance.recipe_ingredients.all().delete()
-            self._create_recipe_ingredients(instance, ingredients_data)
+        instance.tags.set(tags_data)
+        instance.recipe_ingredients.all().delete()
+        self._create_recipe_ingredients(instance, ingredients_data)
 
         return instance
 
@@ -298,10 +270,9 @@ class ShoppingCartSerializer(FavoriteShoppingCartSerializer):
         model = ShoppingCart
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(UserSerializer):
     """Сериализатор для отображения подписок."""
 
-    is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
 
