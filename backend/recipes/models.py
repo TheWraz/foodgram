@@ -101,14 +101,14 @@ class Recipe(models.Model):
             MinValueValidator(
                 MIN_COOKING_TIME,
                 message=(
-                    f'Время приготовления должно быть '
+                    'Время приготовления должно быть '
                     f'не менее {MIN_COOKING_TIME} минуты.'
                 )
             ),
             MaxValueValidator(
                 MAX_COOKING_TIME,
                 message=(
-                    f'Время приготовления не может '
+                    'Время приготовления не может '
                     f'превышать {MAX_COOKING_TIME} минут.'
                 )
             )
@@ -146,8 +146,6 @@ class Recipe(models.Model):
 
     def get_short_url(self, request):
         """Возвращает полную короткую ссылку."""
-        if not self.short_code:
-            return None
         return request.build_absolute_uri(f'/r/{self.short_code}/')
 
 
@@ -172,15 +170,13 @@ class RecipeIngredient(models.Model):
             MinValueValidator(
                 MIN_AMOUNT,
                 message=(
-                    f'Количество должно быть '
-                    f'не менее {MIN_AMOUNT}.'
+                    f'Количество должно быть не менее {MIN_AMOUNT}.'
                 )
             ),
             MaxValueValidator(
                 MAX_AMOUNT,
                 message=(
-                    f'Количество не может '
-                    f'превышать {MAX_AMOUNT}.'
+                    f'Количество не может превышать {MAX_AMOUNT}.'
                 )
             )
         ]
