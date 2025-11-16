@@ -1,5 +1,5 @@
 from django.db.models import Sum
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -127,6 +127,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = self.get_object()
         short_url = recipe.get_short_url(request)
         return Response({'short-link': short_url})
+
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[permissions.AllowAny],
+        url_path='short/(?P<short_code>[^/.]+)'
+    )
+    def get_by_short_code(self, request, short_code=None):
+        """Получить рецепт по короткому коду и сделать редирект."""
+        recipe = get_object_or_404(Recipe, short_code=short_code)
+        redirect_url = request.build_absolute_uri(f'/recipes/{recipe.id}/')
+        return HttpResponseRedirect(redirect_url)
 
     @action(
         detail=False,

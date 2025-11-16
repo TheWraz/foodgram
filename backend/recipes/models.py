@@ -146,7 +146,7 @@ class Recipe(models.Model):
 
     def get_short_url(self, request):
         """Возвращает полную короткую ссылку."""
-        return request.build_absolute_uri(f'/recipes/{self.id}/')
+        return request.build_absolute_uri(f'/r/{self.short_code}/')
 
 
 class RecipeIngredient(models.Model):
