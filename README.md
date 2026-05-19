@@ -92,8 +92,3 @@ docker-compose up -d --build
 ```
 docker-compose down
 ```
-
-## Автор 
-
-- Автор: Wraz - Backend разработка
-- Адрес сервера: foodgramwraz.duckdns.org
