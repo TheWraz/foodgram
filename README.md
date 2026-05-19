@@ -92,3 +92,11 @@ docker-compose up -d --build
 ```
 docker-compose down
 ```
+
+## 👨‍💻 Автор
+
+Никита Дмитриев — [Telegram](https://t.me/TheWraz) | [GitHub](https://github.com/TheWraz)
+
+---
+
+*Проект выполнен в рамках обучения в Яндекс Практикуме*
